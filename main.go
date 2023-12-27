@@ -28,7 +28,7 @@ func main() {
 	})
 
 	m.GET("/users/:id/:name", func(ctx moon.Context) error {
-		return ctx.SendString(ctx.PathParam("id")+ "  "+ ctx.PathParam("name"), http.StatusOK)
+		return ctx.SendString(ctx.PathParam("id")+"  "+ctx.PathParam("name")+"   "+ctx.FirstQueryParam("q"), http.StatusOK)
 	})
 
 	http.ListenAndServe(":3000", m)

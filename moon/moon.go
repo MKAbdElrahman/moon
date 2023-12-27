@@ -2,7 +2,6 @@ package moon
 
 import (
 	"net/http"
-	"regexp"
 )
 
 type HandlerFunc func(Context) error
@@ -21,11 +20,13 @@ func (m *Moon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h := m.findRouteHandler(path, method)
 	pathParams := m.parsePathParams(path, method)
 
-	ctx := Context{
-		Response:   w,
-		Request:    r,
-		PathParams: pathParams, // Attach the path parameters to the context
+	queryParams := extractQueryParamsFromRawQuery(r.URL.RawQuery)
 
+	ctx := Context{
+		Response:    w,
+		Request:     r,
+		PathParams:  pathParams, // Attach the path parameters to the context
+		QueryParams: queryParams,
 	}
 
 	// attach the pathParams to the context
@@ -33,7 +34,7 @@ func (m *Moon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 func (m *Moon) findRouteHandler(path string, method string) HandlerFunc {
 	for _, route := range m.routes {
-		if route.method == method && IsRouteMatch(route.path, path) {
+		if route.method == method && isRouteMatch(route.path, path) {
 			return route.handlerFunc
 		}
 	}
@@ -42,8 +43,8 @@ func (m *Moon) findRouteHandler(path string, method string) HandlerFunc {
 func (m *Moon) parsePathParams(path string, method string) map[string]string {
 
 	for _, route := range m.routes {
-		if route.method == method && IsRouteMatch(route.path, path) {
-			pathParams := ExtractParams(route.path, path)
+		if route.method == method && isRouteMatch(route.path, path) {
+			pathParams := extractPathParams(route.path, path)
 			return pathParams
 		}
 	}
@@ -56,23 +57,4 @@ func (moon *Moon) applyMiddleware(h HandlerFunc) HandlerFunc {
 		h = moon.middleware[i](h)
 	}
 	return h
-}
-
-func ExtractParamsFromRoute(routePath string) []string {
-	// Define a regular expression pattern to match parameters in a route path
-	pattern := `\{(\w+)\}`
-
-	// Compile the regular expression
-	re := regexp.MustCompile(pattern)
-
-	// Use FindAllStringSubmatch to find all matches of the pattern in the route path
-	matches := re.FindAllStringSubmatch(routePath, -1)
-
-	// Extract the captured groups (parameter names) from the matches
-	var params []string
-	for _, match := range matches {
-		params = append(params, match[1])
-	}
-
-	return params
 }

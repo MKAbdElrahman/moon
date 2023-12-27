@@ -1,6 +1,9 @@
 package moon
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 const charsetUTF8 = "charset=UTF-8"
 
@@ -11,9 +14,10 @@ const MIMETextPlain = "text/plain"
 const MIMETextPlainCharsetUTF8 = MIMETextPlain + "; " + charsetUTF8
 
 type Context struct {
-	Response   http.ResponseWriter
-	Request    *http.Request
-	PathParams map[string]string
+	Response    http.ResponseWriter
+	Request     *http.Request
+	PathParams  map[string]string
+	QueryParams map[string][]string
 }
 
 func (c *Context) SendBlob(code int, contentType string, b []byte) (err error) {
@@ -33,7 +37,22 @@ func (c *Context) writeContentType(value string) {
 	}
 }
 
-// Param returns path parameter by name.
 func (c *Context) PathParam(name string) string {
 	return c.PathParams[name]
+}
+
+// Param returns query parameter by name.
+func (c *Context) QueryParam(name string) []string {
+	return c.QueryParams[name]
+}
+
+// Param returns query parameter by name.
+func (c *Context) FirstQueryParam(name string) string {
+
+	if len(c.QueryParam(name)) > 0 {
+		return c.QueryParams[name][0]
+	}
+
+	fmt.Println(c.QueryParams[name], name)
+	return ""
 }
