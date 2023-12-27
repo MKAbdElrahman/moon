@@ -1,58 +1,43 @@
 package main
 
 import (
-	"chi/router"
 	"fmt"
 	"log"
+	"moon/moon"
 	"net/http"
 )
 
 func main() {
-	mux, err := router.NewGroupRouter(router.WithNotFoundHandler(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Sorry! Not Found")
-	}))
 
-	mux.Use(router.LoggingMiddleware)
+	m, err := moon.New(
+		moon.WithNotFound(
+			func(ctx moon.Context) error {
+				return ctx.SendString("route not registered", http.StatusNotFound)
+			},
+		),
+	)
 
-	mux.Use(MiddlewareA, MiddlewareB, MiddlewareC)
+	// m.Use(moon.MiddlewareA, moon.MiddlewareB, moon.MiddlewareC)
 
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Home")
+	m.GET("/", func(ctx moon.Context) error {
+		return ctx.SendString("Home Page", 200)
 	})
 
-	http.ListenAndServe(":8080", mux)
+	m.GET("/users/:id/:name", func(ctx moon.Context) error {
+		return ctx.SendString(ctx.PathParam("id")+ "  "+ ctx.PathParam("name"), http.StatusOK)
+	})
+
+	http.ListenAndServe(":3000", m)
+
 }
 
-// MiddlewareA logs a message.
-func MiddlewareA(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		log.Println("MiddlewareA: Executed")
-
-		// Call the next handler in the chain
-		next(w, req)
-	}
-}
-
-// MiddlewareB logs a message.
-func MiddlewareB(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		log.Println("MiddlewareB: Executed")
-
-		// Call the next handler in the chain
-		next(w, req)
-	}
-}
-
-// MiddlewareC logs a message.
-func MiddlewareC(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		log.Println("MiddlewareC: Executed")
-
-		// Call the next handler in the chain
-		next(w, req)
+func MiddlewareB(next moon.HandlerFunc) moon.HandlerFunc {
+	return func(c moon.Context) error {
+		fmt.Println("Middleware B: Checking authorization")
+		return next(c)
 	}
 }
