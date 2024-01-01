@@ -15,6 +15,10 @@ func main() {
 				return ctx.SendString("route not registered", http.StatusNotFound)
 			},
 		),
+		// moon.WithErrorHandler(
+		// 	func(err error, ctx moon.Context) {
+		// 	ctx.SendString("error happended", http.StatusInternalServerError)
+		// }),
 	)
 
 	// m.Use(moon.MiddlewareA, moon.MiddlewareB, moon.MiddlewareC)
@@ -25,6 +29,10 @@ func main() {
 
 	m.GET("/", func(ctx moon.Context) error {
 		return ctx.SendString("Home Page", 200)
+	})
+
+	m.GET("/error", func(ctx moon.Context) error {
+		return fmt.Errorf("error")
 	})
 
 	m.GET("/users/:id/:name", func(ctx moon.Context) error {

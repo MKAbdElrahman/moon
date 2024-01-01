@@ -5,12 +5,17 @@ import (
 )
 
 type HandlerFunc func(Context) error
+
 type MiddlewareFunc func(next HandlerFunc) HandlerFunc
 
+// HTTPErrorHandler is a centralized HTTP error handler.
+type HTTPErrorHandler func(err error, c Context)
+
 type Moon struct {
-	routes     []Route
-	notFound   HandlerFunc
-	middleware []MiddlewareFunc
+	routes           []Route
+	notFound         HandlerFunc
+	middleware       []MiddlewareFunc
+	HTTPErrorHandler HTTPErrorHandler
 }
 
 func (m *Moon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -25,12 +30,15 @@ func (m *Moon) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := Context{
 		Response:    w,
 		Request:     r,
-		PathParams:  pathParams, // Attach the path parameters to the context
+		PathParams:  pathParams,
 		QueryParams: queryParams,
 	}
 
-	// attach the pathParams to the context
-	m.applyMiddleware(h)(ctx)
+	err := m.applyMiddleware(h)(ctx)
+	// Handle errors centrally
+	if err != nil {
+		m.HTTPErrorHandler(err, ctx)
+	}
 }
 func (m *Moon) findRouteHandler(path string, method string) HandlerFunc {
 	for _, route := range m.routes {

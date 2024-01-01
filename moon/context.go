@@ -18,6 +18,11 @@ type Context struct {
 	Request     *http.Request
 	PathParams  map[string]string
 	QueryParams map[string][]string
+	Moon        *Moon
+}
+
+func (c *Context) Error(err error) {
+	c.Moon.HTTPErrorHandler(err, *c)
 }
 
 func (c *Context) SendBlob(code int, contentType string, b []byte) (err error) {
